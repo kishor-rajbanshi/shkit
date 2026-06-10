@@ -1799,7 +1799,7 @@ _sleep() {
     fi
 
     if ! _number "$_dur"; then
-        _error "_sleep: invalid argument: DURATION: expected number, got: $_dur"
+        _error "_sleep: invalid argument: DURATION: expected number, got: '$_dur'"
         return 1
     fi
 
@@ -1811,12 +1811,39 @@ _sleep() {
 # Check if network is online.
 # Usage: _online [host]
 _online() {
-    _host="$1"
+    _host="${1:-google.com}"
 
     if [ "$#" -gt 1 ]; then
-        _error "_online: expected at most 1 argument: got $#"
+        _error "_online: expected at most 1 argument, got $#"
         return 2
     fi
 
-    ping -c 1 -W 2 "${_host:-google.com}" >/dev/null 2>&1
+    case "$(uname)" in
+    Linux) ping -c 1 -W 2 "$_host" ;;
+    Darwin | *BSD) ping -c 1 -t 2 "$_host" ;;
+    MINGW* | MSYS* | CYGWIN*) ping -n 1 -w 2000 "$_host" ;;
+    *) ping -c 1 "$_host" ;;
+    esac
+}
+
+# Print the current timestamp in YYYY-MM-DD HH:MM:SS format.
+# Usage: _timestamp
+_timestamp() {
+    if [ "$#" -ne 0 ]; then
+        _error "_timestamp: expected 0 arguments, got: $#"
+        return 2
+    fi
+
+    date '+%Y-%m-%d %H:%M:%S'
+}
+
+# Print the current date in YYYY-MM-DD format.
+# Usage: _date
+_date() {
+    if [ "$#" -ne 0 ]; then
+        _error "_date: expected 0 arguments, got: $#"
+        return 2
+    fi
+
+    date '+%Y-%m-%d'
 }
