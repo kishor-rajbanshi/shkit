@@ -111,9 +111,14 @@ _float() {
         return 2
     fi
 
+    # case "${_val#[-+]}" in
+    # '' | '.' | *[!0-9.]* | *.*.*) return 1 ;;
+    # *.*) return 0 ;;
+    # *) return 1 ;;
+    # esac
+
     case "${_val#[-+]}" in
-    '' | '.' | *[!0-9.]* | *.*.*) return 1 ;;
-    *.*) return 0 ;;
+    [0-9]*.[0-9]*) [ "${_val#[-+]}" != "." ] ;;
     *) return 1 ;;
     esac
 }
@@ -149,7 +154,7 @@ _positive() {
         return 2
     fi
 
-    awk "BEGIN { exit !(($_val) > 0) }"
+    awk "BEGIN { exit !(($_num) > 0) }"
 }
 
 # Check if number is negative.
@@ -258,7 +263,7 @@ _ge() {
     fi
 
     if ! _number "$_num1" || ! _number "$_num2"; then
-        _error "_gt: invalid argument(s): expected numbers, got: '$_num1' and '$_num2'"
+        _error "_ge: invalid argument(s): expected numbers, got: '$_num1' and '$_num2'"
         return 2
     fi
 
@@ -492,6 +497,9 @@ _str_replace() {
         return 2
     fi
 
+    _search=$(_sed_escape "$_search")
+    _repl=$(_sed_replace_escape "$_repl")
+
     printf "%s" "$_str" | sed "s|$_search|$_repl|g"
 }
 
@@ -499,7 +507,7 @@ _str_replace() {
 # Usage: _str_pad_left <string> <width> [char]
 _str_pad_left() {
     _str="$1"
-    _wid="$2"
+    _width="$2"
     _char="${3:- }"
 
     if [ "$#" -lt 2 ]; then
@@ -512,8 +520,8 @@ _str_pad_left() {
         return 2
     fi
 
-    if ! _integer "$_wid" || _negative "$_wid"; then
-        _error "_str_pad_left: invalid argument: WIDTH: expected non-negative integer, got: '$_wid'"
+    if ! _integer "$_width" || _negative "$_width"; then
+        _error "_str_pad_left: invalid argument: WIDTH: expected non-negative integer, got: '$_width'"
         return 2
     fi
 
@@ -522,7 +530,7 @@ _str_pad_left() {
         return 2
     fi
 
-    _pad=$(printf '%*s' "$((_wid - ${#_str} < 0 ? 0 : _wid - ${#_str}))" '' | tr ' ' "$_char")
+    _pad=$(printf '%*s' "$((_width - ${#_str} < 0 ? 0 : _width - ${#_str}))" '' | tr ' ' "$_char")
 
     printf '%s%s' "$_pad" "$_str"
 }
@@ -531,7 +539,7 @@ _str_pad_left() {
 # Usage: _str_pad_right <string> <width> [char]
 _str_pad_right() {
     _str="$1"
-    _wid="$2"
+    _width="$2"
     _char="${3:- }"
 
     if [ "$#" -lt 2 ]; then
@@ -544,8 +552,8 @@ _str_pad_right() {
         return 2
     fi
 
-    if ! _integer "$_wid" || _negative "$_wid"; then
-        _error "_str_pad_right: invalid argument: WIDTH: expected non-negative integer, got: '$_wid'"
+    if ! _integer "$_width" || _negative "$_width"; then
+        _error "_str_pad_right: invalid argument: WIDTH: expected non-negative integer, got: '$_width'"
         return 2
     fi
 
@@ -554,7 +562,7 @@ _str_pad_right() {
         return 2
     fi
 
-    _pad=$(printf '%*s' "$((_wid - ${#_str} < 0 ? 0 : _wid - ${#_str}))" '' | tr ' ' "$_char")
+    _pad=$(printf '%*s' "$((_width - ${#_str} < 0 ? 0 : _width - ${#_str}))" '' | tr ' ' "$_char")
 
     printf '%s%s' "$_str" "$_pad"
 }
@@ -604,7 +612,7 @@ _ansi() {
     done
 
     [ "$_INTERACTIVE" ] &&
-        printf "%b" "\033[${_styles:+$_styles}${_fg:+;$_fg}${_bg:+;$_bg}m"
+        printf "%b" "\033[${_styles}${_styles:+${_fg:+;}}${_fg}${_fg:+${_bg:+;}}${_bg}m"
 }
 
 # Check if a command exists on the system.
@@ -694,19 +702,19 @@ _nl() {
 # Print spaces based on given indentation width (default 4).
 # Usage: _indent [width]
 _indent() {
-    _wid="${1:-4}"
+    _width="${1:-4}"
 
     if [ "$#" -gt 1 ]; then
         _error "_indent: expected at most 1 argument, got: $#"
         return 2
     fi
 
-    if ! _integer "$_wid" || _negative "$_wid"; then
-        _error "_indent: invalid argument: WIDTH: expected non-negative integer, got: '$_wid'"
+    if ! _integer "$_width" || _negative "$_width"; then
+        _error "_indent: invalid argument: WIDTH: expected non-negative integer, got: '$_width'"
         return 2
     fi
 
-    printf '%*s' "$_wid" ''
+    printf '%*s' "$_width" ''
 }
 
 # Print an error message and exit with non-zero status.
@@ -759,7 +767,7 @@ _empty() {
     [ -z "$_val" ]
 }
 
-# Check if value is blank.
+# Check if value contains only whitespace.
 # Usage: _blank <value>
 _blank() {
     _val="$1"
@@ -883,7 +891,7 @@ _terminal_width() {
         printf '%s' "$COLUMNS"
     else
         _error "_terminal_width: failed to determine terminal width"
-        return 2
+        return 1
     fi
 }
 
@@ -891,12 +899,12 @@ _terminal_width() {
 # Usage: _line [-c <char>] [-w <width>]
 _line() {
     _char="-"
-    _wid=$(_terminal_width 2>/dev/null || printf "%d" 80)
+    _width=$(_terminal_width 2>/dev/null || printf "%d" 80)
 
     while getopts ':c:w:' _opt; do
         case "$_opt" in
         c) _char="$OPTARG" ;;
-        w) _wid="$OPTARG" ;;
+        w) _width="$OPTARG" ;;
         :)
             _error "_line: option requires an argument: '-$OPTARG'"
             return 2
@@ -920,15 +928,15 @@ _line() {
         return 2
     fi
 
-    if ! _integer "$_wid" || _negative "$_wid"; then
-        _error "_line: invalid argument: -w: expected non-negative integer, got: '$_wid'"
+    if ! _integer "$_width" || _negative "$_width"; then
+        _error "_line: invalid argument: -w: expected non-negative integer, got: '$_width'"
         return 2
     fi
 
-    i=0
-    while [ "$i" -lt "$_wid" ]; do
+    _i=0
+    while [ "$_i" -lt "$_width" ]; do
         printf '%s' "$_char"
-        i=$((i + 1))
+        _i=$((_i + 1))
     done
 
     printf '\n'
@@ -950,9 +958,11 @@ _url() {
     esac
 
     case "$_url" in
-    http:// | https:// | http://.* | https://.* | *" "* | *"\t"* | *..*)
-        return 1
-        ;;
+    http:// | https://) return 1 ;;
+    esac
+
+    case "$_url" in
+    *[[:space:]]* | *..*) return 1 ;;
     esac
 
     return 0
@@ -986,7 +996,7 @@ _ip() {
         0[0-9]*) return 1 ;;
         esac
 
-        _ge "$_octet" 0 && _le "$_octet" 255 || return 1
+        [ "$_octet" -ge 0 ] && [ "$_octet" -le 255 ] || return 1
     done
 
     return 0
@@ -1057,7 +1067,10 @@ _confirm() {
 
     while :; do
         printf "%s" "${_prompt:+$_prompt }$_hint: " >&2
-        read -r _confirmation
+
+        if ! read -r _confirmation; then
+            return 1
+        fi
 
         if [ -z "$_confirmation" ]; then
             _confirmation="$_default"
@@ -1108,9 +1121,11 @@ _input() {
     while :; do
         printf '%s%s%s: ' "$_prompt" \
             "${_hint:+${_prompt:+ }($_hint)}" \
-            "${_default:+${_hint:+ }[$_default]}" >&2
+            "${_default:+${_hint:-${_prompt:+ }}[$_default]}" >&2
 
-        read -r _input
+        if ! read -r _input; then
+            return 1
+        fi
 
         if [ -z "$_input" ]; then
             _input="$_default"
@@ -1162,7 +1177,11 @@ _secret() {
         printf '%s%s: ' "$_prompt" "${_hint:+${_prompt:+ }($_hint)}" >&2
 
         stty -echo 2>/dev/null
-        read -r _secret
+
+        if ! read -r _secret; then
+            return 1
+        fi
+
         stty echo 2>/dev/null
         printf "\n"
 
@@ -1223,7 +1242,10 @@ _select() {
         done
 
         printf "%s" 'Choice: ' >&2
-        read -r _choice
+
+        if ! read -r _choice; then
+            return 1
+        fi
 
         if [ -z "$_choice" ]; then
             if [ -n "$_error" ]; then
@@ -1234,7 +1256,7 @@ _select() {
             fi
         fi
 
-        if ! _integer "$_choice" || [ "$_choice" -lt 1 ] || [ "$_choice" -gt "$((_i - 1)) " ]; then
+        if ! _integer "$_choice" || [ "$_choice" -lt 1 ] || [ "$_choice" -gt "$((_i - 1))" ]; then
             printf "\033[31m%s\033[0m\n\n" "Invalid choice: $_choice" >&2
             continue
         fi
@@ -1303,7 +1325,10 @@ _multiselect() {
         done
 
         printf "%s" 'Choices (comma or space separated): ' >&2
-        read -r _choices
+
+        if ! read -r _choices; then
+            return 1
+        fi
 
         if [ -z "$_choices" ]; then
             if [ -n "$_error" ]; then
@@ -1319,7 +1344,7 @@ _multiselect() {
         _selected=""
 
         for _choice in $_choices; do
-            if ! _integer "$_choice" || [ "$_choice" -lt 1 ] || [ "$_choice" -gt "$((_i - 1)) " ]; then
+            if ! _integer "$_choice" || [ "$_choice" -lt 1 ] || [ "$_choice" -gt "$((_i - 1))" ]; then
                 printf "\033[31m%s\033[0m\n\n" "Invalid choice: $_choice" >&2
                 continue 2
             fi
@@ -1344,7 +1369,7 @@ _git_branch() {
     _branch="$1"
 
     if [ "$#" -ne 1 ]; then
-        _error "_branch: expected 1 argument, got: $#"
+        _error "_git_branch: expected 1 argument, got: $#"
         return 2
     fi
 
@@ -1546,7 +1571,12 @@ _file_ensure() {
         return 1
     fi
 
-    [ -f "$_path" ] || touch "$_path"
+    if [ ! -f "$_path" ]; then
+        if ! touch "$_path"; then
+            _error "_file_ensure: failed to create file: '$_path'"
+            return 1
+        fi
+    fi
 }
 
 # Count the number of lines in a file.
@@ -1603,16 +1633,16 @@ _file_contains() {
     fi
 
     if [ ! -f "$_file" ]; then
-        _error "_file_contains: not a file: $_file"
+        _error "_file_contains: not a file: '$_file'"
         return 1
     fi
 
-    if [ ! -r "$_path" ]; then
-        _error "_file_contains: permission denied: $_path"
+    if [ ! -r "$_file" ]; then
+        _error "_file_contains: permission denied: '$_file'"
         return 1
     fi
 
-    grep -q "$_substr" "$_file" 2>/dev/null
+    grep -qF "$_substr" "$_file" 2>/dev/null
 }
 
 # Replace all occurrences of a pattern in a file.
@@ -1663,20 +1693,33 @@ _dir_ensure() {
 # Join path components into a single path.
 # Usage: _path_join <path> [path2 ...]
 _path_join() {
-    _result=""
-
     if [ "$#" -lt 1 ]; then
         _error "_path_join: expected at least 1 argument, got: $#"
         return 2
     fi
 
+    _result=""
     _i=0
+
     for _part in "$@"; do
-        [ "$_i" -gt 0 ] && _part="${_part#/}"
+        if [ "$_i" -gt 0 ]; then
+            _part="${_part#/}"
+        fi
+
         _part="${_part%/}"
+
+        if [ -z "$_part" ]; then
+            _i=$((_i + 1))
+            continue
+        fi
+
         _result="${_result:+$_result/}${_part}"
         _i=$((_i + 1))
     done
+
+    case "$1" in
+    /*) _result="/${_result#/}" ;;
+    esac
 
     printf '%s' "$_result"
 }
@@ -1691,15 +1734,19 @@ _path_abs() {
         return 2
     fi
 
-    cd "$(dirname "$_path")" 2>/dev/null &&
-        printf '%s/%s' "$(pwd)" "$(basename "$_path")"
+    if ! cd "$(dirname "$_path")" 2>/dev/null; then
+        _error "_path_abs: no such file or directory: '$_path'"
+        return 1
+    fi
+
+    printf '%s/%s' "$(pwd)" "$(basename "$_path")"
 }
 
 # Print the current operating system name.
 # Usage: _sys_os
 _sys_os() {
     if [ "$#" -ne 0 ]; then
-        _error "_sys_os: expected 0 argument, got: $#"
+        _error "_sys_os: expected 0 arguments, got: $#"
         return 2
     fi
 
@@ -1715,7 +1762,7 @@ _sys_os() {
 # Usage: _sys_arch
 _sys_arch() {
     if [ "$#" -ne 0 ]; then
-        _error "_sys_arch: expected 0 argument, got: $#"
+        _error "_sys_arch: expected 0 arguments, got: $#"
         return 2
     fi
 
@@ -1728,7 +1775,7 @@ _sys_arch() {
 }
 
 # Extract the version number of a command.
-# Usage: _version <cmd>
+# Usage: _version <command>
 _version() {
     _cmd="$1"
 
@@ -1753,7 +1800,7 @@ _version() {
 # Usage: _pid
 _pid() {
     if [ "$#" -ne 0 ]; then
-        _error "_pid: expected 0 arguments, got $#"
+        _error "_pid: expected 0 arguments, got: $#"
         return 2
     fi
 
@@ -1764,7 +1811,7 @@ _pid() {
 # Usage: _tmpfile
 _tmpfile() {
     if [ "$#" -ne 0 ]; then
-        _error "_tmpfile: expected 0 arguments, got $#"
+        _error "_tmpfile: expected 0 arguments, got: $#"
         return 2
     fi
 
@@ -1775,7 +1822,7 @@ _tmpfile() {
 # Usage: _tmpdir
 _tmpdir() {
     if [ "$#" -ne 0 ]; then
-        _error "_tmpdir: expected 0 arguments, got $#"
+        _error "_tmpdir: expected 0 arguments, got: $#"
         return 2
     fi
 
@@ -1789,18 +1836,18 @@ _sleep() {
     _msg="$2"
 
     if [ "$#" -lt 1 ]; then
-        _error "_sleep: expected at least 1 argument, got $#"
+        _error "_sleep: expected at least 1 argument, got: $#"
         return 2
     fi
 
     if [ "$#" -gt 2 ]; then
-        _error "_sleep: expected at most 2 arguments, got $#"
+        _error "_sleep: expected at most 2 arguments, got: $#"
         return 2
     fi
 
     if ! _number "$_dur"; then
         _error "_sleep: invalid argument: DURATION: expected number, got: '$_dur'"
-        return 1
+        return 2
     fi
 
     printf "\033[2m%s\033[0m${_msg:+\n}" "$_msg"
@@ -1814,15 +1861,15 @@ _online() {
     _host="${1:-google.com}"
 
     if [ "$#" -gt 1 ]; then
-        _error "_online: expected at most 1 argument, got $#"
+        _error "_online: expected at most 1 argument, got: $#"
         return 2
     fi
 
     case "$(uname)" in
-    Linux) ping -c 1 -W 2 "$_host" ;;
-    Darwin | *BSD) ping -c 1 -t 2 "$_host" ;;
-    MINGW* | MSYS* | CYGWIN*) ping -n 1 -w 2000 "$_host" ;;
-    *) ping -c 1 "$_host" ;;
+    Linux) ping -c 1 -W 2 "$_host" >/dev/null 2>&1 ;;
+    Darwin | *BSD) ping -c 1 -t 2 "$_host" >/dev/null 2>&1 ;;
+    MINGW* | MSYS* | CYGWIN*) ping -n 1 -w 2000 "$_host" >/dev/null 2>&1 ;;
+    *) ping -c 1 "$_host" >/dev/null 2>&1 ;;
     esac
 }
 
@@ -1846,4 +1893,138 @@ _date() {
     fi
 
     date '+%Y-%m-%d'
+}
+
+# Run a command with a spinner and message.
+# Usage: _spinner [-m <message>] <command> [arg ...]
+_spinner() {
+    _msg=""
+
+    while getopts ':m:' _opt; do
+        case "$_opt" in
+        m) _msg="$OPTARG" ;;
+        :)
+            _error "_spinner: option requires an argument: '-$OPTARG'"
+            return 2
+            ;;
+        ?)
+            _error "_spinner: invalid option: '-$OPTARG'"
+            return 2
+            ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    if [ "$#" -lt 1 ]; then
+        _error "_spinner: expected 1 command, got: $#"
+        return 2
+    fi
+
+    _cmd="$1"
+
+    if ! _exists "$_cmd"; then
+        _error "_spinner: command not found: '$_cmd'"
+        return 127
+    fi
+
+    "$@" &
+    _pid=$!
+
+    _frames="|/-\\"
+
+    _i=0
+    while kill -0 "$_pid" 2>/dev/null; do
+        _i=$(((_i + 1) % 4))
+        _f=$(printf '%s' "$_frames" | cut -c$((_i + 1)))
+        printf "\r%s %s" "$_f" "$_msg" >&2
+        sleep 0.1
+    done
+
+    wait "$_pid"
+    _result=$?
+
+    printf '\r\033[2K' >&2
+
+    return $_result
+}
+
+# Print a progress bar.
+# Usage: _progress <current> <total> [width]
+#       total=100 i=0
+#       while [ "$i" -le "$total" ]; do
+#           _progress "$i" "$total" "100"
+#           i=$((i + 1))
+#           sleep 1
+#       done
+_progress() {
+    _current="$1"
+    _total="$2"
+    _width="${3:-40}"
+
+    if [ "$#" -lt 2 ]; then
+        _error "_progress: expected at least 2 arguments, got: $#"
+        return 2
+    fi
+
+    if [ "$#" -gt 3 ]; then
+        _error "_progress: expected at most 3 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _integer "$_current" || _negative "$_current"; then
+        _error "_progress: invalid argument: CURRENT: expected non-negative integer, got: '$_current'"
+        return 2
+    fi
+
+    if ! _integer "$_total" || ! _positive "$_total"; then
+        _error "_progress: invalid argument: TOTAL: expected positive integer, got: '$_total'"
+        return 2
+    fi
+
+    if ! _integer "$_width" || _negative "$_width"; then
+        _error "_progress: invalid argument: WIDTH: expected non-negative integer, got: '$_width'"
+        return 2
+    fi
+
+    [ "$_current" -gt "$_total" ] && _current="$_total"
+
+    _percentage=$(awk "BEGIN { printf \"%d\", ($_current / $_total) * 100 }")
+    _fill=$(awk "BEGIN { printf \"%d\", ($_current / $_total) * $_width }")
+    _empty=$((_width - _fill))
+
+    _bar=$(awk "BEGIN { for(i=0;i<$_fill;i++) printf \"#\" }")
+    _space=$(awk "BEGIN { for(i=0;i<$_empty;i++) printf \"-\" }")
+
+    printf "\r[%s%s] %d%%" "$_bar" "$_space" "$_percentage" >&2
+}
+
+# Compute the SHA-256 checksum of a file.
+# Usage: _checksum <file>
+_checksum() {
+    _file="$1"
+
+    if [ "$#" -ne 1 ]; then
+        _error "_checksum: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    if [ ! -f "$_file" ]; then
+        _error "_checksum: not a file: '$_file'"
+        return 1
+    fi
+
+    if [ ! -r "$_file" ]; then
+        _error "_checksum: permission denied: '$_file'"
+        return 1
+    fi
+
+    if _exists sha256sum; then
+        sha256sum "$_file" | cut -d' ' -f1
+    elif _exists shasum; then
+        shasum -a 256 "$_file" | cut -d' ' -f1
+    else
+        _error "_checksum: no checksum command found (sha256sum, shasum)"
+        return 127
+    fi
 }

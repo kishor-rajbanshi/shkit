@@ -33,7 +33,11 @@ assert_false "_float -1.a"
 assert_false "_float '' '' '' ''"
 
 _str_pad_left "hello" 33 x
-
 _nl
 
-_version git
+total=100 i=0
+while [ "$i" -le "$total" ]; do
+    _progress $i "$total" "100"
+    i=$((i + 1))
+    sleep 1
+done
