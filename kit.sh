@@ -95,3 +95,28 @@ _success() {
 
     printf "\033[32m%s\033[0m%b" "$1" "${1:+\n}" >&2
 }
+
+# Check if two values are equal.
+# Usage: _equal <value1> <value2>
+_equal() {
+    if [ "$#" -ne 2 ]; then
+        _error "_equal: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    [ "$1" = "$2" ]
+}
+
+# Check if value is a valid integer.
+# Usage: _integer <value>
+_integer() {
+    if [ "$#" -ne 1 ]; then
+        _error "_integer: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    case "${1#[-+]}" in
+    '' | *[!0-9]*) return 1 ;;
+    *) return 0 ;;
+    esac
+}
