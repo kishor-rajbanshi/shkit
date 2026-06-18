@@ -328,3 +328,40 @@ _str_upper() {
 
     printf "%s" "$1" | tr '[:lower:]' '[:upper:]'
 }
+
+# Convert a string to lowercase-hyphenated slug format.
+# Usage: _str_slug <string>
+_str_slug() {
+    if [ "$#" -ne 1 ]; then
+        _error "_str_slug: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "%s" "$1" |
+        tr '[:upper:]' '[:lower:]' |
+        tr -cs 'a-z0-9' '-' |
+        sed 's/^-//;s/-$//'
+}
+
+# Remove leading and trailing whitespace from a string.
+# Usage: _str_trim <string>
+_str_trim() {
+    if [ "$#" -ne 1 ]; then
+        _error "_str_trim: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "%s" "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
+}
+
+# Reverse the characters of a string.
+# Usage: _str_reverse <string>
+_str_reverse() {
+    if [ "$#" -ne 1 ]; then
+        _error "_str_reverse: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "%s" "$1" | rev 2>/dev/null ||
+        printf "%s" "$1" | awk '{for(_i=length;_i>0;_i--) printf substr($0,_i,1); print ""}'
+}
