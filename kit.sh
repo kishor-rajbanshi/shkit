@@ -120,3 +120,32 @@ _integer() {
     *) return 0 ;;
     esac
 }
+
+# Check if value is a valid float.
+# Usage: _float <value>
+_float() {
+    if [ "$#" -ne 1 ]; then
+        _error "_float: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    case "${1#[-+]}" in
+    '' | '.' | *[!0-9.]* | *.*.*) return 1 ;;
+    *.*) return 0 ;;
+    *) return 1 ;;
+    esac
+}
+
+# Check if value is valid number.
+# Usage: _number <value>
+_number() {
+    if [ "$#" -ne 1 ]; then
+        _error "_number: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    case "${1#[-+]}" in
+    '' | '.' | *[!0-9.]* | *.*.*) return 1 ;;
+    *) return 0 ;;
+    esac
+}
