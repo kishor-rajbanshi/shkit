@@ -365,3 +365,28 @@ _str_reverse() {
     printf "%s" "$1" | rev 2>/dev/null ||
         printf "%s" "$1" | awk '{for(_i=length;_i>0;_i--) printf substr($0,_i,1); print ""}'
 }
+
+# Count occurrences of a substring within a string.
+# Usage: _str_count <string> <substring>
+_str_count() {
+    if [ "$#" -ne 2 ]; then
+        _error "_str_count: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    printf '%s' "$1" | grep -oF "$2" | wc -l | tr -d ' '
+}
+
+# Check if a string contains a given substring.
+# Usage: _str_contains <string> <substring>
+_str_contains() {
+    if [ "$#" -ne 2 ]; then
+        _error "_str_contains: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    case "$1" in
+    *"$2"*) return 0 ;;
+    *) return 1 ;;
+    esac
+}
