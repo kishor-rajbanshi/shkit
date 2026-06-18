@@ -149,3 +149,67 @@ _number() {
     *) return 0 ;;
     esac
 }
+
+# Check if number is positive.
+# Usage: _positive <number>
+_positive() {
+    if [ "$#" -ne 1 ]; then
+        _error "_positive: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1"; then
+        _error "_positive: invalid argument: expected number, got: '$1'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) > 0) }"
+}
+
+# Check if number is negative.
+# Usage: _negative <number>
+_negative() {
+    if [ "$#" -ne 1 ]; then
+        _error "_negative: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1"; then
+        _error "_negative: invalid argument: expected number, got: '$1'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) < 0) }"
+}
+
+# Check if first number equals second.
+# Usage: _eq <number1> <number2>
+_eq() {
+    if [ "$#" -ne 2 ]; then
+        _error "_eq: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1" || ! _number "$2"; then
+        _error "_eq: invalid argument(s): expected numbers, got: '$1' and '$2'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) == ($2)) }"
+}
+
+# Check if first number is less than second.
+# Usage: _lt <number1> <number2>
+_lt() {
+    if [ "$#" -ne 2 ]; then
+        _error "_lt: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1" || ! _number "$2"; then
+        _error "_lt: invalid argument(s): expected numbers, got: '$1' and '$2'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) < ($2)) }"
+}
