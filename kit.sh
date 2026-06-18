@@ -457,3 +457,63 @@ _str_replace() {
 
     printf "%s" "$1" | sed "s|$_search|$_repl|g"
 }
+
+# Pad a string on the left to a given width with a fill character.
+# Usage: _str_pad_left <string> <width> [char]
+_str_pad_left() {
+    if [ "$#" -lt 2 ]; then
+        _error "_str_pad_left: expected at least 2 arguments, got: $#"
+        return 2
+    fi
+
+    if [ "$#" -gt 3 ]; then
+        _error "_str_pad_left: expected at most 3 arguments, got: $#"
+        return 2
+    fi
+
+    _char="${3:- }"
+
+    if ! _integer "$2" || _negative "$2"; then
+        _error "_str_pad_left: invalid argument: WIDTH: expected non-negative integer, got: '$2'"
+        return 2
+    fi
+
+    if [ "${#_char}" -ne 1 ]; then
+        _error "_str_pad_left: invalid argument: CHAR: expected 1 character, got: '$_char'"
+        return 2
+    fi
+
+    _pad=$(printf '%*s' "$((2 - ${#1} < 0 ? 0 : 2 - ${#1}))" '' | tr ' ' "$_char")
+
+    printf '%s%s' "$_pad" "$1"
+}
+
+# Pad a string on the right to a given width with a fill character.
+# Usage: _str_pad_right <string> <width> [char]
+_str_pad_right() {
+    if [ "$#" -lt 2 ]; then
+        _error "_str_pad_left: expected at least 2 arguments, got: $#"
+        return 2
+    fi
+
+    if [ "$#" -gt 3 ]; then
+        _error "_str_pad_left: expected at most 3 arguments, got: $#"
+        return 2
+    fi
+
+    _char="${3:- }"
+
+    if ! _integer "$2" || _negative "$2"; then
+        _error "_str_pad_left: invalid argument: WIDTH: expected non-negative integer, got: '$2'"
+        return 2
+    fi
+
+    if [ "${#_char}" -ne 1 ]; then
+        _error "_str_pad_left: invalid argument: CHAR: expected 1 character, got: '$_char'"
+        return 2
+    fi
+
+    _pad=$(printf '%*s' "$((2 - ${#1} < 0 ? 0 : 2 - ${#1}))" '' | tr ' ' "$_char")
+
+    printf '%s%s' "$1" "$_pad"
+}
