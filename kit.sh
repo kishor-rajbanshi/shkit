@@ -424,3 +424,36 @@ _str_starts_with() {
     *) return 1 ;;
     esac
 }
+
+# Check if a string ends with a given substring.
+# Usage: _str_ends_with <string> <substring>
+_str_ends_with() {
+    if [ "$#" -ne 2 ]; then
+        _error "_str_ends_with: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    case "$1" in
+    *"$2") return 0 ;;
+    *) return 1 ;;
+    esac
+}
+
+# Replace all occurrences of a substring within a string.
+# Usage: _str_replace <string> <search> <replace>
+_str_replace() {
+    if [ "$#" -ne 3 ]; then
+        _error "_str_replace: expected 3 arguments, got: $#"
+        return 2
+    fi
+
+    if [ -z "$2" ]; then
+        _error "_str_replace: invalid argument: SEARCH: expected string, got: '$2'"
+        return 2
+    fi
+
+    _search=$(_sed_escape "$2")
+    _repl=$(_sed_replace_escape "$3")
+
+    printf "%s" "$1" | sed "s|$_search|$_repl|g"
+}
