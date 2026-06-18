@@ -295,3 +295,36 @@ _sed_replace_escape() {
 
     printf '%s' "$1" | sed 's/[\/&]/\\&/g'
 }
+
+# Return the character length of a string.
+# Usage: _str_length <string>
+_str_length() {
+    if [ "$#" -ne 1 ]; then
+        _error "_str_length: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "%d" "${#1}"
+}
+
+# Convert a string to lowercase.
+# Usage: _str_lower <string>
+_str_lower() {
+    if [ "$#" -ne 1 ]; then
+        _error "_str_lower: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "%s" "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+# Convert a string to uppercase.
+# Usage: _str_upper <string>
+_str_upper() {
+    if [ "$#" -ne 1 ]; then
+        _error "_str_upper: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "%s" "$1" | tr '[:lower:]' '[:upper:]'
+}
