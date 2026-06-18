@@ -261,3 +261,37 @@ _ge() {
 
     awk "BEGIN { exit !(($1) >= ($2)) }"
 }
+
+# Escape shell glob characters.
+# Usage: _glob_escape <string>
+_glob_escape() {
+    if [ "$#" -ne 1 ]; then
+        _error "_glob_escape: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf '%s' "$1" |
+        sed 's/\\/\\\\/g; s/\*/\\*/g; s/\?/\\?/g; s/\[/\\[/g; s/\]/\\]/g'
+}
+
+# Escape special characters in a sed expression.
+# Usage: _sed_escape <value>
+_sed_escape() {
+    if [ "$#" -ne 1 ]; then
+        _error "_sed_escape: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf '%s' "$1" | sed 's/[]\/$*.^|[]/\\&/g'
+}
+
+# Escape special characters in a sed replacement.
+# Usage: _sed_replace_escape <value>
+_sed_replace_escape() {
+    if [ "$#" -ne 1 ]; then
+        _error "_sed_replace_escape: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf '%s' "$1" | sed 's/[\/&]/\\&/g'
+}
