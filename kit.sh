@@ -62,3 +62,36 @@ _error() {
 
     printf "\033[41m%-${_box_width}s\033[0m\n\n" "" >&2
 }
+
+# Print a formatted warning message to stderr.
+# Usage: _warning <message>
+_warning() {
+    if [ "$#" -ne 1 ]; then
+        _error "_warning: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "\033[33m%s\033[0m%b" "$1" "${1:+\n}" >&2
+}
+
+# Print a formatted info message to stderr.
+# Usage: _info <message>
+_info() {
+    if [ "$#" -ne 1 ]; then
+        _error "_info: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "\033[34m%s\033[0m%b" "$1" "${1:+\n}" >&2
+}
+
+# Print a formatted success message to stderr.
+# Usage: _success <message>
+_success() {
+    if [ "$#" -ne 1 ]; then
+        _error "_success: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    printf "\033[32m%s\033[0m%b" "$1" "${1:+\n}" >&2
+}
