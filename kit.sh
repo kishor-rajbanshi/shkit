@@ -213,3 +213,51 @@ _lt() {
 
     awk "BEGIN { exit !(($1) < ($2)) }"
 }
+
+# Check if first number is less than or equal to second.
+# Usage: _le <number1> <number2>
+_le() {
+    if [ "$#" -ne 2 ]; then
+        _error "_le: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1" || ! _number "$2"; then
+        _error "_le: invalid argument(s): expected numbers, got: '$1' and '$2'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) <= ($2)) }"
+}
+
+# Check if first number is greater than second.
+# Usage: _gt <number1> <number2>
+_gt() {
+    if [ "$#" -ne 2 ]; then
+        _error "_gt: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1" || ! _number "$2"; then
+        _error "_gt: invalid argument(s): expected numbers, got: '$1' and '$2'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) > ($2)) }"
+}
+
+# Check if first number is greater than or equal to second.
+# Usage: _ge <number1> <number2>
+_ge() {
+    if [ "$#" -ne 2 ]; then
+        _error "_ge: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _number "$1" || ! _number "$2"; then
+        _error "_ge: invalid argument(s): expected numbers, got: '$1' and '$2'"
+        return 2
+    fi
+
+    awk "BEGIN { exit !(($1) >= ($2)) }"
+}
