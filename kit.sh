@@ -14,3 +14,51 @@ _args() {
 _argc() {
     printf "%d" "$#"
 }
+
+# Print a formatted error message to stderr.
+# Usage: _error <message>
+_error() {
+    if [ "$#" -ne 1 ]; then
+        _error "_error: expected 1 argument, got: $#"
+        return 2
+    fi
+
+    _msg=$(printf '%s' "$1")
+
+    [ -z "$_msg" ] && return 0
+
+    _cols="${COLUMNS:-$(stty size </dev/tty 2>/dev/null | cut -d' ' -f2)}"
+    _cols="${_cols:-80}"
+    _max_width=$((_cols - 4))
+    [ "$_max_width" -lt 20 ] && _max_width=20
+
+    _wrapped_msg=$(
+        printf '%s\n' "$_msg" | expand | while IFS= read -r _line || [ -n "$_line" ]; do
+            if [ -z "$_line" ]; then
+                printf '\n'
+            else
+                printf '%s\n' "$_line" | fold -s -w "$_max_width"
+            fi
+        done
+    )
+
+    _text_width=0
+    while IFS= read -r _line || [ -n "$_line" ]; do
+        _line_len=${#_line}
+        [ "$_line_len" -gt "$_text_width" ] && _text_width=$_line_len
+    done <<-EOF
+		$_wrapped_msg
+	EOF
+
+    _box_width=$((_text_width + 4))
+
+    printf "\n\033[41m%-${_box_width}s\033[0m\n" "" >&2
+
+    while IFS= read -r _line || [ -n "$_line" ]; do
+        printf "\033[37;41m  %-${_text_width}s  \033[0m\n" "$_line" >&2
+    done <<-EOF
+		$_wrapped_msg
+	EOF
+
+    printf "\033[41m%-${_box_width}s\033[0m\n\n" "" >&2
+}
