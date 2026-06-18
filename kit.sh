@@ -390,3 +390,37 @@ _str_contains() {
     *) return 1 ;;
     esac
 }
+
+# Repeat a string a given number of times.
+# Usage: _str_repeat <string> <count>
+_str_repeat() {
+    if [ "$#" -ne 2 ]; then
+        _error "_str_repeat: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    if ! _integer "$2" || _negative "$2"; then
+        _error "_str_repeat: invalid argument: COUNT: expected non-negative integer, got: '$2'"
+        return 2
+    fi
+
+    _i=0
+    while [ "$_i" -lt "$2" ]; do
+        printf '%s' "$1"
+        _i=$((_i + 1))
+    done
+}
+
+# Check if a string starts with a given substring.
+# Usage: _str_starts_with <string> <substring>
+_str_starts_with() {
+    if [ "$#" -ne 2 ]; then
+        _error "_str_starts_with: expected 2 arguments, got: $#"
+        return 2
+    fi
+
+    case "$1" in
+    "$2"*) return 0 ;;
+    *) return 1 ;;
+    esac
+}
